@@ -17,21 +17,7 @@ const generateToken = (data) => {
   return jwt.sign(data, secret, { expiresIn: "1800s" }); //token expires in 30 minutes
 };
 
-//setting multer for profile pics
 const storage = multer.memoryStorage();
-// multer.diskStorage({
-//   destination: (req, file, cb) => {
-//     if (file.fieldname === "profile") {
-//       cb(null, "./profile-pics");
-//     }
-//     if (file.fieldname === "banner") {
-//       cb(null, "./banner-pics");
-//     }
-//   },
-//   filename: (req, file, cb) => {
-//     cb(null, file.originalname);
-//   },
-// });
 
 const upload = multer({
   storage: storage,
@@ -40,6 +26,7 @@ const upload = multer({
   },
 });
 
+//creates a product
 router.post(
   "/",
   upload.fields([{ name: "image", maxCount: 1 }]),
@@ -90,6 +77,7 @@ router.post(
 //   });
 // });
 
+//updates product based on id
 router.put(
   "/:id",
   upload.fields([{ name: "image", maxCount: 1 }]),
@@ -178,6 +166,7 @@ router.delete("/:id", (req, res) => {
     });
 });
 
+//gets product by id
 router.get("/:id", (req, res) => {
   const id = req.params.id;
   Product.findById(id)
@@ -205,6 +194,7 @@ router.get("/:id", (req, res) => {
     });
 });
 
+//gets products by category
 router.get("/:category", (req, res) => {
   const { category } = req.params;
   Product.find({ category: { $eq: category } })
