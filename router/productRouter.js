@@ -28,7 +28,7 @@ const upload = multer({
 
 //creates a product
 router.post(
-  "/",
+  "/newproduct",
   upload.fields([{ name: "image", maxCount: 1 }]),
   async (req, res) => {
     const { title, category, description, price, rating } = req.body;
@@ -90,8 +90,8 @@ router.put(
       const paramsImage = {
         Bucket: process.env.AWS_BUCKET_NAME_PRODUCT,
         Key: image,
-        Body: req.files.iamge[0].buffer,
-        ContentType: req.files.iamge[0].mimetype,
+        Body: req.files.image[0].buffer,
+        ContentType: req.files.image[0].mimetype,
       };
       const commandImage = new PutObjectCommand(paramsImage);
       await s3.send(commandImage);
