@@ -5,6 +5,7 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 const bodyParser = require("body-parser");
 const productRouter = require("./router/productRouter.js");
+const userRouter = require("./router/userRouter.js");
 const cors = require("cors");
 
 app.use(function (req, res, next) {
@@ -22,6 +23,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use("/api/product", productRouter);
+app.use("/api/user", userRouter);
 
 app.listen(PORT, () => {
   console.log(`Hello.  Listening on port ${PORT}`);
