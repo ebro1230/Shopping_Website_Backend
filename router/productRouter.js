@@ -121,7 +121,7 @@ router.put(
         })
         .catch((e) => console.log(e.message));
     } else {
-      User.findByIdAndUpdate(
+      Product.findByIdAndUpdate(
         id,
         {
           title,
