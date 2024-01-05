@@ -73,9 +73,12 @@ router.post("/signup", async (req, res) => {
 
 router.put("/login", (req, res) => {
   const { email, password } = req.body;
-  let newCartItems = req.body.cart;
+  let updatedUser = [];
+  console.log(req.body.cart.length);
   let cart = [];
   User.findOne({ email }).then((user) => {
+    //console.log("Old Cart:");
+    //console.log(user);
     if (!user) {
       return res.status(404).send("email not found");
     } else {
@@ -83,39 +86,53 @@ router.put("/login", (req, res) => {
         if (!validPassword) {
           return res.status(404).send("password incorrect");
         } else {
-          if (!cart) {
-            cart = [];
-          } else if (user.cart.length === 0) {
-            cart = [newCartItems];
+          if (user.cart.length === 0) {
+            console.log("Cart Length Zero");
+            cart = req.body.cart;
+          } else if (req.body.cart.length === 0) {
+            console.log("No New Cart Items");
+            cart = user.cart;
           } else {
-            cart = newCartItems.map((item) => {
-              user.cart.find((cartItem) => cartItem.id === item.id)
-                ? cart.map((cartItem) => {
-                    if (Number(cartItem.id) === Number(item.id)) {
-                      return (cartItem = {
-                        category: cartItem.category,
-                        description: cartItem.description,
-                        id: cartItem.id,
-                        itemId: cartItem.id,
-                        image: cartItem.image,
-                        price: cartItem.price,
-                        rating: cartItem.rating,
-                        title: cartItem.title,
-                        quantity:
-                          Number(cartItem.quantity) + Number(item.quantity),
-                      });
-                    } else {
-                      return cartItem;
-                    }
-                  })
-                : [...cart, item];
+            console.log("Cart Has a Length");
+            cart = user.cart.map((item) => {
+              if (req.body.cart.find((cartItem) => cartItem.id === item.id)) {
+                cartItem = req.body.cart.find(
+                  (cartItem) => cartItem.id === item.id
+                );
+                return {
+                  category: cartItem.category,
+                  description: cartItem.description,
+                  id: cartItem.id,
+                  itemId: cartItem.id,
+                  image: cartItem.image,
+                  price: cartItem.price,
+                  rating: cartItem.rating,
+                  title: cartItem.title,
+                  quantity: Number(cartItem.quantity) + Number(item.quantity),
+                };
+              } else {
+                return item;
+              }
+            });
+            req.body.cart.forEach((cartItem) => {
+              if (!cart.find((item) => cartItem.id === item.id)) {
+                cart = [...cart, cartItem];
+              }
             });
           }
-          //Update user with new Cart
+          User.findOneAndUpdate(
+            { email: email },
+            { cart: cart },
+            { new: true }
+          ).then((newUser) => {
+            updatedUser = newUser;
+            //console.log("New Cart:");
+            //console.log(newUser);
+            const token = generateToken({ email: user.email });
+            const response = newUser;
+            res.json({ token, response });
+          });
         }
-        const token = generateToken({ email: user.email });
-        const response = user;
-        res.json({ token, response });
       });
     }
   });
