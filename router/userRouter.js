@@ -18,14 +18,45 @@ const generateToken = (data) => {
   return jwt.sign(data, secret, { expiresIn: "1h" }); //token expires in 30 minutes
 };
 
-const storage = multer.memoryStorage();
-
-const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    checkFileType(file, cb);
-  },
-});
+const handleUpdateUserCart = (user, cart, req, res) => {
+  if (user.cart.length === 0) {
+    cart = req.body.cart;
+  } else if (req.body.cart.length === 0) {
+    cart = user.cart;
+  } else {
+    cart = user.cart.map((item) => {
+      if (req.body.cart.find((cartItem) => cartItem.id === item.id)) {
+        cartItem = req.body.cart.find((cartItem) => cartItem.id === item.id);
+        return {
+          category: cartItem.category,
+          description: cartItem.description,
+          id: cartItem.id,
+          itemId: cartItem.id,
+          image: cartItem.image,
+          price: cartItem.price,
+          rating: cartItem.rating,
+          title: cartItem.title,
+          quantity: Number(cartItem.quantity) + Number(item.quantity),
+        };
+      } else {
+        return item;
+      }
+    });
+    req.body.cart.forEach((cartItem) => {
+      if (!cart.find((item) => cartItem.id === item.id)) {
+        cart = [...cart, cartItem];
+      }
+    });
+  }
+  User.findOneAndUpdate(
+    { email: user.email },
+    { cart: cart },
+    { new: true }
+  ).then((newUser) => {
+    const response = "Cart Updated";
+    res.json({ newUser, response });
+  });
+};
 
 router.get("/:email", async (req, res) => {
   const { email } = req.params;
@@ -73,12 +104,8 @@ router.post("/signup", async (req, res) => {
 
 router.put("/login", (req, res) => {
   const { email, password } = req.body;
-  let updatedUser = [];
-  console.log(req.body.cart.length);
   let cart = [];
   User.findOne({ email }).then((user) => {
-    //console.log("Old Cart:");
-    //console.log(user);
     if (!user) {
       return res.status(404).send("email not found");
     } else {
@@ -86,55 +113,28 @@ router.put("/login", (req, res) => {
         if (!validPassword) {
           return res.status(404).send("password incorrect");
         } else {
-          if (user.cart.length === 0) {
-            console.log("Cart Length Zero");
-            cart = req.body.cart;
-          } else if (req.body.cart.length === 0) {
-            console.log("No New Cart Items");
-            cart = user.cart;
-          } else {
-            console.log("Cart Has a Length");
-            cart = user.cart.map((item) => {
-              if (req.body.cart.find((cartItem) => cartItem.id === item.id)) {
-                cartItem = req.body.cart.find(
-                  (cartItem) => cartItem.id === item.id
-                );
-                return {
-                  category: cartItem.category,
-                  description: cartItem.description,
-                  id: cartItem.id,
-                  itemId: cartItem.id,
-                  image: cartItem.image,
-                  price: cartItem.price,
-                  rating: cartItem.rating,
-                  title: cartItem.title,
-                  quantity: Number(cartItem.quantity) + Number(item.quantity),
-                };
-              } else {
-                return item;
-              }
-            });
-            req.body.cart.forEach((cartItem) => {
-              if (!cart.find((item) => cartItem.id === item.id)) {
-                cart = [...cart, cartItem];
-              }
-            });
-          }
-          User.findOneAndUpdate(
-            { email: email },
-            { cart: cart },
-            { new: true }
-          ).then((newUser) => {
-            updatedUser = newUser;
-            //console.log("New Cart:");
-            //console.log(newUser);
-            const token = generateToken({ email: user.email });
-            const response = newUser;
-            res.json({ token, response });
-          });
+          handleUpdateUserCart(user, cart, req, res);
         }
       });
     }
+  });
+});
+
+router.put("/:id/emptyCart", (req, res) => {
+  const { id } = req.params;
+  User.findByIdAndUpdate({ _id: id }, { cart: [] }, { new: true }).then(
+    (user) => {
+      const message = "Cart Emptied";
+      res.json({ user, message }).status(204);
+    }
+  );
+});
+
+router.put("/:id/updateCart", (req, res) => {
+  const { id } = req.params;
+  let cart = [];
+  User.findById({ _id: id }).then((user) => {
+    handleUpdateUserCart(user, cart, req, res);
   });
 });
 
