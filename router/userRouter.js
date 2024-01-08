@@ -130,6 +130,17 @@ router.put("/:id/emptyCart", (req, res) => {
   );
 });
 
+router.put("/:id/updateCart2", (req, res) => {
+  const { id } = req.params;
+  const { cart } = req.body;
+  User.findByIdAndUpdate({ _id: id }, { cart: cart }, { new: true }).then(
+    (user) => {
+      const message = "Cart Updated";
+      res.json({ user, message }).status(204);
+    }
+  );
+});
+
 router.put("/:id/updateCart", (req, res) => {
   const { id } = req.params;
   let cart = [];
