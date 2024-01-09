@@ -224,4 +224,32 @@ router.get("/:category", (req, res) => {
     });
 });
 
+router.get("/", (req, res) => {
+  Product.find()
+    .then(async (products) => {
+      if (!products) {
+        return res.status(404).send("Products not found!");
+      } else {
+        products.forEach(async (product) => {
+          if (product.image) {
+            const getObjectParamsImage = {
+              Bucket: process.env.AWS_BUCKET_NAME_PRODUCT,
+              Key: product.image,
+            };
+            const commandImage = new GetObjectCommand(getObjectParamsImage);
+            const urlImage = await getSignedUrl(s3, commandImage, {
+              expiresIn: 3600,
+            });
+            product.image = urlImage;
+          }
+        });
+        return res.json(products);
+      }
+    })
+    .catch((e) => {
+      console.log(e.message);
+      return res.sendStatus(500);
+    });
+});
+
 module.exports = router;
