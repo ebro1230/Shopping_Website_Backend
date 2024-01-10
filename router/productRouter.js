@@ -195,26 +195,29 @@ router.get("/:id", (req, res) => {
 });
 
 //gets products by category
-router.get("/:category", (req, res) => {
+router.get("/categories/:category", (req, res) => {
   const { category } = req.params;
   Product.find({ category: { $eq: category } })
     .then(async (products) => {
       if (!products) {
         return res.status(404).send("Products not found!");
       } else {
-        products.forEach(async (product) => {
-          if (product.image) {
-            const getObjectParamsImage = {
-              Bucket: process.env.AWS_BUCKET_NAME_PRODUCT,
-              Key: product.image,
-            };
-            const commandImage = new GetObjectCommand(getObjectParamsImage);
-            const urlImage = await getSignedUrl(s3, commandImage, {
-              expiresIn: 3600,
-            });
-            product.image = urlImage;
-          }
-        });
+        await Promise.all(
+          await products.map(async (product) => {
+            if (product.image) {
+              const getObjectParamsImage = {
+                Bucket: process.env.AWS_BUCKET_NAME_PRODUCT,
+                Key: product.image,
+              };
+              const commandImage = new GetObjectCommand(getObjectParamsImage);
+              const urlImage = await getSignedUrl(s3, commandImage, {
+                expiresIn: 3600,
+              });
+              product.image = urlImage;
+              return product;
+            }
+          })
+        );
         return res.json(products);
       }
     })
@@ -230,19 +233,22 @@ router.get("/", (req, res) => {
       if (!products) {
         return res.status(404).send("Products not found!");
       } else {
-        products.forEach(async (product) => {
-          if (product.image) {
-            const getObjectParamsImage = {
-              Bucket: process.env.AWS_BUCKET_NAME_PRODUCT,
-              Key: product.image,
-            };
-            const commandImage = new GetObjectCommand(getObjectParamsImage);
-            const urlImage = await getSignedUrl(s3, commandImage, {
-              expiresIn: 3600,
-            });
-            product.image = urlImage;
-          }
-        });
+        await Promise.all(
+          await products.map(async (product) => {
+            if (product.image) {
+              const getObjectParamsImage = {
+                Bucket: process.env.AWS_BUCKET_NAME_PRODUCT,
+                Key: product.image,
+              };
+              const commandImage = new GetObjectCommand(getObjectParamsImage);
+              const urlImage = await getSignedUrl(s3, commandImage, {
+                expiresIn: 3600,
+              });
+              product.image = urlImage;
+              return product;
+            }
+          })
+        );
         return res.json(products);
       }
     })
